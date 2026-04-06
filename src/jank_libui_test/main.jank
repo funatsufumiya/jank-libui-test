@@ -1,0 +1,60 @@
+(ns jank-libui-test.main)
+
+(cpp/raw "
+
+#include <stdio.h>
+#include <ui.h>
+
+uiWindow *w;
+uiButton* button;
+uiGrid *grid;
+          
+void onMsgBoxClicked(uiButton *b, void *data)
+{
+	uiMsgBox(w,
+		\"This is a normal message box.\",
+		\"More detailed information can be shown here.\");
+}
+
+int onClosing(uiWindow *w, void *data)
+{
+	uiQuit();
+	return 1;
+}
+
+void test(void)
+{
+	uiInitOptions o = {0};
+	const char *err;
+
+	err = uiInit(&o);
+	if (err != NULL) {
+		fprintf(stderr, \"Error initializing libui-ng: %s\\n\", err);
+		uiFreeInitError(err);
+		return;
+	}
+
+	// Create a new window
+	w = uiNewWindow(\"Hello World\", 300, 300, 0);
+
+  grid = uiNewGrid();
+	uiGridSetPadded(grid, 1);
+
+	button = uiNewButton(\"Message Box\");
+	uiButtonOnClicked(button, onMsgBoxClicked, NULL);
+  
+  uiGridAppend(grid, uiControl(button),
+		0, 0, 1, 1,
+		0, uiAlignFill, 0, uiAlignFill);
+  uiWindowSetChild(w, uiControl(grid));
+                                   
+	uiWindowOnClosing(w, onClosing, NULL);
+	uiControlShow(uiControl(w));
+	uiMain();
+	uiUninit();
+}
+
+")
+
+(defn -main [& args]
+  (cpp/test))
